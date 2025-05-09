@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Downloader</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: green;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .alert {
+            margin-top: 20px;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 4px;
+            width: 60%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        #loading {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            color: #007bff;
+        }
+
+        ul#fileList {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>YouTube Downloader</h1>
+
+    <h3>Download Single URL</h3>
+    <input type="text" id="urlInput" placeholder="Enter YouTube video URL here">
+    <br>
+    <button id="downloadVideo">Download Video</button>
+    <button id="downloadAudio">Download Audio</button>
+
+    <h3>Download from Excel File</h3>
+    <p><code>uploads/youtube_links.xlsx</code> will be used.</p>
+    <button id="downloadExcelVideo">Download Video from Excel</button>
+    <button id="downloadExcelAudio">Download Audio from Excel</button>
+
+    <p id="loading" style="display: none;">Downloading... Please wait.</p>
+
+    <div id="alert" class="alert" style="display:none;"></div>
+
+    <div id="fileOutput" style="display:none;">
+        <h4>Downloaded Files (<span id="fileCount">0</span>):</h4>
+        <ul id="fileList"></ul>
+    </div>
+
+    <script>
+        function showLoading(show) {
+            if (show) {
+                $('#loading').show();
+                $('#alert').hide();
+                $('#fileOutput').hide();
+            } else {
+                $('#loading').hide();
+            }
+        }
+
+        function displayResult(response) {
+            $('#alert')
+                .text(response.message)
+                .removeClass()
+                .addClass('alert ' + (response.status === 'success' ? 'success' : 'error'))
+                .show();
+
+            if (response.status === 'success' && response.files) {
+                $('#fileList').empty();
+                response.files.forEach(file => {
+                    $('#fileList').append(`<li>${file}</li>`);
+                });
+                $('#fileCount').text(response.files.length);
+                $('#fileOutput').show();
+            }
+        }
+
+        $('#downloadVideo').click(function () {
+            const url = $('#urlInput').val();
+            $('#fileOutput').hide();
+            showLoading(true);
+            $.ajax({
+                url: '/download_video',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ url: url }),
+                success: function (response) {
+                    showLoading(false);
+                    displayResult(response);
+                },
+                error: function () {
+                    showLoading(false);
+                    $('#alert')
+                        .text('Failed to send request to the server.')
+                        .removeClass()
+                        .addClass('alert error')
+                        .show();
+                }
+            });
+        });
+
+        $('#downloadAudio').click(function () {
+            const url = $('#urlInput').val();
+            $('#fileOutput').hide();
+            showLoading(true);
+            $.ajax({
+                url: '/download_audio',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ url: url }),
+                success: function (response) {
+                    showLoading(false);
+                    displayResult(response);
+                },
+                error: function () {
+                    showLoading(false);
+                    $('#alert')
+                        .text('Failed to send request to the server.')
+                        .removeClass()
+                        .addClass('alert error')
+                        .show();
+                }
+            });
+        });
+
+        $('#downloadExcelVideo').click(function () {
+            $('#fileOutput').hide();
+            showLoading(true);
+            $.ajax({
+                url: '/download_excel_video',
+                type: 'POST',
+                success: function (response) {
+                    showLoading(false);
+                    displayResult(response);
+                },
+                error: function () {
+                    showLoading(false);
+                    $('#alert')
+                        .text('Something went wrong with the video download.')
+                        .removeClass()
+                        .addClass('alert error')
+                        .show();
+                }
+            });
+        });
+
+        $('#downloadExcelAudio').click(function () {
+            $('#fileOutput').hide();
+            showLoading(true);
+            $.ajax({
+                url: '/download_excel_audio',
+                type: 'POST',
+                success: function (response) {
+                    showLoading(false);
+                    displayResult(response);
+                },
+                error: function () {
+                    showLoading(false);
+                    $('#alert')
+                        .text('Something went wrong with the audio download.')
+                        .removeClass()
+                        .addClass('alert error')
+                        .show();
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
